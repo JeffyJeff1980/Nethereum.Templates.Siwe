@@ -3,10 +3,6 @@
 The Nethereum SIWE template provides an starting point of signing and authentication using Ethereum accounts and the standard SIWE message.
 The templates provides the following use cases, and how SIWE can be implemented using the Nethereum libraries.
 + Rest Api 
-+ Blazor Wasm + Rest Api
-+ Blazor Server side (standalone)
-+ Maui (Future template with Rest Api)
-+ Avalonia (Future template with Rest Api)
 
 ![Siwe Nethereum](screenshots/demoAuthentication.gif)
 
@@ -271,11 +267,6 @@ public async Task<SiweMessage> ValidateToken(string token)
     }
 ```
 
-## Blazor Wasm
-The template uses a basis Metamask as the unique Ethereum Host Provider, and is the one responsible to Sign the SIWE Message.
-When a user is connected to Metamask the user is presented with the option to Login, this first calls the rest Api to generate the SIWE message and assign a new Nonce, as seen in the Rest API. Then the user is prompted to sign the message as plain text returned from the server, once signed is submitted back to the rest api, which validates the message matches the one stored and signature, and then creates the JWT. The JWT is stored in the local storage and then reuse each time a call is make to the server. If the user disconnects from MM is automatically logout from the server and JWT removed from local storage.
-
-
 ###  SiweAuthenticationWasmStateProvider
 The SiweAuthenticationWasmStateProvider is the extended version of EthereumAuthenticationStateProvider, the custom Ethereum Authentication State Provider used when an account is Connected creating the claims of "EthereumConnected" for that account.
 
@@ -349,81 +340,5 @@ private ClaimsPrincipal GenerateSiweClaimsPrincipal(User currentUser)
 }
 ```
 
-#### Claims in Blazor
-An example on how to use the Claims in Blazor is the following, in which restrict access to the Erc20Transfer
-```xml
-       <AuthorizeView Roles="SiweAuthenticated">
-             <Authorized Context="siweAuth">
-                    <Erc20Transfer></Erc20Transfer>
-             </Authorized>
-        </AuthorizeView>
-```
-Or remove a link from the navigation
-```xml
-<div class="@NavMenuCssClass" @onclick="ToggleNavMenu">
-    <ul class="nav flex-column">
-        <li class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="oi oi-home" aria-hidden="true"></span> Home
-            </NavLink>
-        </li>
-        <AuthorizeView Roles="SiweAuthenticated">
-            <li class="nav-item px-3">
-                <NavLink class="nav-link" href="orders" Match="NavLinkMatch.All">
-                    <span class="oi oi-grid-four-up" aria-hidden="true"></span>My Orders
-                </NavLink>
-            </li>
-        </AuthorizeView>
-    </ul>
-</div>
-```
 
-## Blazor Server side
-The Blazor server side, it is much simpler as we don't require a RestApi for authentication, everything is part of the same application.
-The SiweAuthenticationServerStateProvider is responsible to orchestrate now with the NethereumSiweAuthenticatorService, which is part of the Nethereum.UI https://github.com/Nethereum/Nethereum/blob/master/src/Nethereum.UI/NethereumSiweAuthenticatorService.cs
-
-```csharp
-     public async Task AuthenticateAsync(string address = null)
-        {
-            
-            if (EthereumHostProvider == null  || !EthereumHostProvider.Available)
-            {
-                throw new Exception("Cannot authenticate user, an Ethereum host is not available");
-            }
-
-            if (string.IsNullOrEmpty(address))
-            {
-                address = await EthereumHostProvider.GetProviderSelectedAccountAsync();
-            }
-            var siweMessage = new DefaultSiweMessage();
-            siweMessage.Address = address.ConvertToEthereumChecksumAddress();
-            siweMessage.SetExpirationTime(DateTime.Now.AddMinutes(10));
-            siweMessage.SetNotBefore(DateTime.Now);
-            var fullMessage = await nethereumSiweAuthenticatorService.AuthenticateAsync(siweMessage);
-            await _accessTokenService.SetAccessTokenAsync(SiweMessageStringBuilder.BuildMessage(fullMessage));
-            await MarkUserAsAuthenticated();
-        }
-
-```
-
-In this scenario we store directly the SiweMessage using the ProtectedSessionStorageAccessTokenService https://github.com/Nethereum/Nethereum.Siwe-Template/blob/main/ExampleProjectSiwe.Server/Services/ProtectedSessionStorageAccessTokenService.cs to maintain the FrontEnd session.
-And validation of the SiweMessage can be done when getting the AuthenticationState.
-
-```csharp
-public async override Task<AuthenticationState> GetAuthenticationStateAsync()
-        {
-            var currentUser = await GetUserAsync();
-
-            if (currentUser != null && currentUser.EthereumAddress != null)
-            {
-                var claimsPrincipal = GenerateSiweClaimsPrincipal(currentUser);
-                return new AuthenticationState(claimsPrincipal);
-            }
-            await _accessTokenService.RemoveAccessTokenAsync();
-            return await base.GetAuthenticationStateAsync();
-        }
-```
-
-### MAUI and Avalonia examples 
-Authentication for Maui and Avalonia will be the similar to Wasm using the Rest Api and SecuredStorage. If using an standalone application, the Blazor Hybrid or Avalonia Desktop as an starting point until having a specific example.
 
