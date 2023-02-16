@@ -319,3 +319,73 @@ public async Task<SiweMessage> ValidateToken(string token)
 ```
 
 
+### The JWT validation Middleware
+The invoke method is an important part of the .NET Core middleware pipeline. It is invoked each time a HTTP request is made and passed through the pipeline. This allows developers to create custom logic for handling requests, such as authentication, authorization, logging and caching. 
+```csharp
+public class SiweJwtMiddleware
+{
+    private readonly RequestDelegate _next;
+    public const string ContextEthereumAddress = "ethereumAddress";
+    public const string ContextSiweMessage = "siweMessage";
+
+    public static string? GetEthereumAddressFromContext(HttpContext context)
+    {
+        if (context.Items.ContainsKey(ContextEthereumAddress))
+        {
+            return (string)context.Items[ContextEthereumAddress]!;
+        }
+
+        return null;
+    }
+
+    public static SiweMessage? GetSiweMessageFromContext(HttpContext context)
+    {
+        if (context.Items.ContainsKey(ContextSiweMessage))
+        {
+            return (SiweMessage)context.Items[ContextSiweMessage]!;
+        }
+
+        return null;
+    }
+
+    public static void SetSiweMessage(HttpContext context, SiweMessage siweMessage)
+    {
+        context.Items[ContextSiweMessage] = siweMessage;
+    }
+
+    public static void SetEthereumAddress(HttpContext context, string address)
+    {
+        context.Items[ContextEthereumAddress] = address;
+    }
+
+    public SiweJwtMiddleware(RequestDelegate next)
+    {
+        _next = next;
+    }
+
+    public async Task InvokeAsync(HttpContext context, ISiweJwtAuthorisationService siweJwtAuthorisation)
+    {
+        var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+        var siweMessage = await siweJwtAuthorisation.ValidateToken(token);
+        if (siweMessage != null)
+        {
+            SetEthereumAddress(context, siweMessage.Address);
+            SetSiweMessage(context, siweMessage);
+        }
+
+        await _next(context);
+    }
+}
+```
+
+### Setting up the Middleware in .NET Core
+The following line in Program.cs is used to add the middleware to the application before it is started:
+
+```csharp
+app.UseMiddleware<SiweJwtMiddleware>();
+```
+
+
+```csharp 
+
+
