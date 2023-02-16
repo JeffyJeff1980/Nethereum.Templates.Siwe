@@ -212,6 +212,8 @@ To enable the reusability of other JWT middleware we create a JWT that stores th
 
 DateTimes are stored for both SIWE and the JWT due to precission issues on milliseconds. JWT are defaulted to 0, so we won't be able to recreate the message to validate the signature.
 
+Notice that you absolutely need to set your JWT Key, Issuer and Audience here. These are configured in the appsettings.json file
+
 ```csharp
 public string GenerateToken(SiweMessage siweMessage, string signature)
   {
