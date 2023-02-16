@@ -1,8 +1,10 @@
 ﻿using ExampleProjectSiwe.RestApi.Authorisation;
+using ExampleProjectSiwe.RestApi.Models;
 using Microsoft.AspNetCore.Mvc;
 using Nethereum.Siwe;
 using Nethereum.Siwe.Core;
 using Nethereum.Util;
+using System.Security.Claims;
 
 namespace ExampleProjectSiwe.RestApi.Controllers
 {
@@ -34,6 +36,9 @@ namespace ExampleProjectSiwe.RestApi.Controllers
 
     [AllowAnonymous]
     [HttpPost("authenticate")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Authenticate(AuthenticateRequest authenticateRequest)
     {
       var siweMessage = SiweMessageParser.Parse(authenticateRequest.SiweEncodedMessage);
@@ -70,8 +75,19 @@ namespace ExampleProjectSiwe.RestApi.Controllers
 
     [AllowAnonymous]
     [HttpPost("message")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public IActionResult GenerateNewSiweMessage([FromBody] string address)
     {
+      var addressUtil = new AddressUtil();
+      var isValid = addressUtil.IsValidEthereumAddressHexFormat(address);
+
+      if (!isValid)
+      {
+        ModelState.AddModelError("InvalidAddress", "Invalid Address");
+        return BadRequest(ModelState);
+      }
+
       var message = new DefaultSiweMessage();
       message.SetExpirationTime(DateTime.Now.AddMinutes(10));
       message.SetNotBefore(DateTime.Now);
@@ -80,6 +96,8 @@ namespace ExampleProjectSiwe.RestApi.Controllers
     }
 
     [HttpPost("logout")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public IActionResult LogOut()
     {
       var siweMessage = SiweJwtMiddleware.GetSiweMessageFromContext(HttpContext);
@@ -88,24 +106,27 @@ namespace ExampleProjectSiwe.RestApi.Controllers
     }
 
     [HttpGet("user")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public IActionResult GetAuthenticatedUser()
     {
-      //ethereum address
+      //ethereum wallet address
       var address = SiweJwtMiddleware.GetEthereumAddressFromContext(HttpContext);
+
       if (address != null)
       {
-        //Get all user details .. from a service etc
-        return Ok(new User { EthereumAddress = address });
+        //First get user claims
+        var claims = ClaimsPrincipal.Current?.Identities.First().Claims.ToList();
+
+        //Filter specific claims
+        var username = claims?.FirstOrDefault(x => x.Type.Equals("UserName", StringComparison.OrdinalIgnoreCase))?.Value;
+        var email = claims?.FirstOrDefault(x => x.Type.Equals("Email", StringComparison.OrdinalIgnoreCase))?.Value;
+
+        return Ok(new User { Username = username, Email = email, WalletAddress = address });
       }
+
       //this should not happen
       return Forbid();
-    }
-
-    public class User
-    {
-      public string EthereumAddress { get; set; }
-      public string UserName { get; set; } = "Vitalik";
-      public string Email { get; set; } = "test@ExampleProject.com";
     }
   }
 }

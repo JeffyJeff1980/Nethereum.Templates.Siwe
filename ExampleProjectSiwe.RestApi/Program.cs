@@ -48,10 +48,9 @@ builder.Services.AddSwaggerGen(c =>
 });
 #endregion Add Swagger
 
-# region Controllers, OData & Swagger
+# region Controllers, endpoints
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddHttpContextAccessor();
 #endregion
 
 #region CORS
@@ -79,7 +78,6 @@ var app = builder.Build();
 #endregion
 
 #region Use Swagger
-// Configure the HTTP request pipeline.
 app.UseSwagger();
 if (app.Environment.IsDevelopment())
 {
@@ -99,9 +97,8 @@ else if (app.Environment.IsProduction())
 #region Use CORS
 app.UseCors("AllowOrigin");
 #endregion
-// Configure the HTTP request pipeline.
 
-//app.UseAuthorization();
+app.UseAuthorization();
 app.UseCors(configure =>
 {
   configure
