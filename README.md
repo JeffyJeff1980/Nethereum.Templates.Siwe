@@ -224,13 +224,13 @@ public string GenerateToken(SiweMessage siweMessage, string signature)
       Issuer = issuer,
       Audience = audience,
       Subject = new ClaimsIdentity(new[] {
-                                                     new Claim(ClaimTypeAddress, siweMessage.Address) ,
-                                                     new Claim(ClaimTypeNonce, siweMessage.Nonce),
-                                                     new Claim(ClaimTypeSignature, signature),
-                                                     new Claim(ClaimTypeSiweExpiry, siweMessage.ExpirationTime),
-                                                     new Claim(ClaimTypeSiweIssuedAt, siweMessage.IssuedAt),
-                                                     new Claim(ClaimTypeSiweNotBefore, siweMessage.NotBefore),
-                                            }),
+                                            new Claim(ClaimTypeAddress, siweMessage.Address) ,
+                                            new Claim(ClaimTypeNonce, siweMessage.Nonce),
+                                            new Claim(ClaimTypeSignature, signature),
+                                            new Claim(ClaimTypeSiweExpiry, siweMessage.ExpirationTime),
+                                            new Claim(ClaimTypeSiweIssuedAt, siweMessage.IssuedAt),
+                                            new Claim(ClaimTypeSiweNotBefore, siweMessage.NotBefore),
+                                          }),
 
       SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
     };
