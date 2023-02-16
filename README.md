@@ -320,7 +320,7 @@ public async Task<SiweMessage> ValidateToken(string token)
 
 
 ### The JWT validation Middleware
-The invoke method is an important part of the .NET Core middleware pipeline. It is invoked each time a HTTP request is made and passed through the pipeline. This allows developers to create custom logic for handling requests, such as authentication, authorization, logging and caching. 
+The invoke method is an important part of the .NET Core middleware pipeline. It is invoked each time a HTTP request is made and passed through the pipeline. This allows developers to create custom logic for handling requests, such as authentication.
 ```csharp
 public class SiweJwtMiddleware
 {
