@@ -379,13 +379,8 @@ public class SiweJwtMiddleware
 ```
 
 ### Setting up the Middleware in .NET Core
-The following line in Program.cs is used to add the middleware to the application before it is started:
+The UseMiddleware in .NET Core allows developers to create the application pipeline. Through this feature, developers can invoke middleware components in the pipeline of an http request. 
 
 ```csharp
 app.UseMiddleware<SiweJwtMiddleware>();
 ```
-
-
-```csharp 
-
-
