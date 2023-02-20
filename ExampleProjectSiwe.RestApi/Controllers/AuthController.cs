@@ -11,12 +11,12 @@ namespace ExampleProjectSiwe.RestApi.Controllers
   [Authorize]
   [ApiController]
   [Route("[controller]")]
-  public class AuthenticationController : Controller
+  public class AuthController : Controller
   {
     private readonly ISiweJwtAuthorisationService _siweJwtAuthorisationService;
     private readonly SiweMessageService _siweMessageService;
 
-    public AuthenticationController(SiweMessageService siweMessageService, ISiweJwtAuthorisationService siweJwtAuthorisationService)
+    public AuthController(SiweMessageService siweMessageService, ISiweJwtAuthorisationService siweJwtAuthorisationService)
     {
       _siweMessageService = siweMessageService;
       _siweJwtAuthorisationService = siweJwtAuthorisationService;
@@ -24,7 +24,7 @@ namespace ExampleProjectSiwe.RestApi.Controllers
 
     public class AuthenticateRequest
     {
-      public string SiweEncodedMessage { get; set; }
+      public string Message { get; set; }
       public string Signature { get; set; }
     }
 
@@ -41,7 +41,7 @@ namespace ExampleProjectSiwe.RestApi.Controllers
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Authenticate(AuthenticateRequest authenticateRequest)
     {
-      var siweMessage = SiweMessageParser.Parse(authenticateRequest.SiweEncodedMessage);
+      var siweMessage = SiweMessageParser.Parse(authenticateRequest.Message);
       var signature = authenticateRequest.Signature;
       var validUser = await _siweMessageService.IsUserAddressRegistered(siweMessage);
       if (validUser)
@@ -74,10 +74,10 @@ namespace ExampleProjectSiwe.RestApi.Controllers
     }
 
     [AllowAnonymous]
-    [HttpPost("message")]
+    [HttpPost("message/{address}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public IActionResult GenerateNewSiweMessage([FromBody] string address)
+    public IActionResult GenerateNewSiweMessage([FromRoute] string address)
     {
       var addressUtil = new AddressUtil();
       var isValid = addressUtil.IsValidEthereumAddressHexFormat(address);
